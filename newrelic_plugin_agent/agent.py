@@ -25,11 +25,10 @@ class NewRelicPluginAgent(helper.Controller):
     every minute and reports the state to NewRelic.
 
     """
-    IGNORE_KEYS = ['license_key', 'proxy', 'endpoint',
-                   'poll_interval', 'wake_interval']
+    IGNORE_KEYS             = ['license_key', 'proxy', 'endpoint', 'poll_interval', 'wake_interval']
     MAX_METRICS_PER_REQUEST = 10000
-    PLATFORM_URL = 'https://platform-api.newrelic.com/platform/v1/metrics'
-    WAKE_INTERVAL = 60
+    PLATFORM_URL            = 'https://platform-api.newrelic.com/platform/v1/metrics'
+    WAKE_INTERVAL           = 60
 
     def __init__(self, args, operating_system):
         """Initialize the NewRelicPluginAgent object.
@@ -40,18 +39,23 @@ class NewRelicPluginAgent(helper.Controller):
         """
         super(NewRelicPluginAgent, self).__init__(args, operating_system)
         self.derive_last_interval = dict()
-        self.endpoint = self.PLATFORM_URL
-        self.http_headers = {'Accept': 'application/json',
-                             'Content-Type': 'application/json'}
+        self.endpoint = self.config.application.get('platform_url') or self.PLATFORM_URL
+        self.http_headers = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
         self.last_interval_start = None
         self.min_max_values = dict()
-        self._wake_interval = (self.config.application.get('wake_interval') or
-                               self.config.application.get('poll_interval') or
-                               self.WAKE_INTERVAL)
+        self._wake_interval = (
+            self.config.application.get('wake_interval') or
+            self.config.application.get('poll_interval') or
+            self.WAKE_INTERVAL
+        )
         self.next_wake_interval = int(self._wake_interval)
         self.publish_queue = queue.Queue()
         self.threads = list()
         info = tuple([__version__] + list(self.system_platform))
+
         LOGGER.info('Agent v%s initialized, %s %s v%s', *info)
 
     def setup(self):
@@ -64,6 +68,7 @@ class NewRelicPluginAgent(helper.Controller):
         """
         if hasattr(self.config.application, 'endpoint'):
             self.endpoint = self.config.application.endpoint
+
         self.http_headers['X-License-Key'] = self.license_key
         self.last_interval_start = time.time()
 
@@ -74,9 +79,11 @@ class NewRelicPluginAgent(helper.Controller):
         :rtype: dict
 
         """
-        return {'host': socket.gethostname(),
-                'pid': os.getpid(),
-                'version': __version__}
+        return {
+            'host': socket.gethostname(),
+            'pid': os.getpid(),
+            'version': __version__
+        }
 
     @property
     def license_key(self):
